@@ -5,28 +5,29 @@
 int main()
 {
     constexpr int pointCount = 200;
-    const sf::Vector2f ellipseRadius = {200.f, 200.f};
-
+    sf::Vector2f roseRadius = {200.f, 200.f};
+    sf::Vector2f roseRoadRadius = {200.f, 100.f};
+    sf::Vector2f roseStartPoint = {400.f, 300.f};
     sf::ContextSettings settings;
     settings.antialiasingLevel = 8;
     sf::RenderWindow window(
         sf::VideoMode({800, 600}), "Polar Rose",
         sf::Style::Default, settings);
 
-    sf::ConvexShape ellipse;
-    ellipse.setPosition({400, 320});
-    ellipse.setFillColor(sf::Color(0xAA, 0xAA, 0x80));
+    sf::ConvexShape rose;
+    rose.setFillColor(sf::Color(0xAA, 0xAA, 0x80));
 
-    ellipse.setPointCount(pointCount);
+    rose.setPointCount(pointCount);
     for (int pointNo = 0; pointNo < pointCount; ++pointNo)
     {
         float angle = float(2 * M_PI * pointNo) / float(pointCount);
         sf::Vector2f point = sf::Vector2f{
-            ellipseRadius.x * std::sin(6 * angle),
-            ellipseRadius.y * std::cos(angle)};
-        ellipse.setPoint(pointNo, point);
+            roseRadius.x * std::cos(6 * angle) * std::cos(angle),
+            roseRadius.y * std::cos(6 * angle) * std::sin(angle)};
+        rose.setPoint(pointNo, point);
     }
 
+    float pointRoad = 0;
     while (window.isOpen())
     {
         sf::Event event;
@@ -37,9 +38,13 @@ int main()
                 window.close();
             }
         }
+        float angle = float(2 * M_PI * pointRoad) / float(pointCount);
+        rose.setPosition({roseStartPoint.x + roseRoadRadius.x * std::cos(angle),
+                          roseStartPoint.y + roseRoadRadius.y * std::sin(angle)});
+        pointRoad += 0.1;
 
         window.clear();
-        window.draw(ellipse);
+        window.draw(rose);
         window.display();
     }
 }
