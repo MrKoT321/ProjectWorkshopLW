@@ -140,7 +140,6 @@ int main()
     initEye(eye2);
     while (window.isOpen())
     {
-        sf::Event event;
         pollEvents(window, mousePosition);
         update(mousePosition, eye1, eye2);
         redrawFrame(window, eye1, eye2);
