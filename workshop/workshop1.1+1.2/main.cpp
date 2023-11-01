@@ -52,7 +52,7 @@ void updateRotation(sf::Vector2f mousePosition, sf::ConvexShape &pointer)
     pointer.setRotation(toDegrees(angle));
 }
 
-bool updatePosition(sf::Vector2f mousePosition, sf::ConvexShape &pointer, float time)
+void updatePosition(sf::Vector2f mousePosition, sf::ConvexShape &pointer, float time)
 {
     const int speed_per_frame = 20;
     sf::Vector2f motion = mousePosition - pointer.getPosition();
@@ -64,16 +64,13 @@ bool updatePosition(sf::Vector2f mousePosition, sf::ConvexShape &pointer, float 
         const float speed = speed_per_frame * time;
         const sf::Vector2f position = pointer.getPosition() + motion * speed;
         pointer.setPosition(position);
-        return true;
     }
-    pointer.setPosition(mousePosition);
-    return false;
 }
 
 void update(sf::Vector2f mousePosition, sf::ConvexShape &pointer, float time)
 {
-    if (updatePosition(mousePosition, pointer, time))
-        updateRotation(mousePosition, pointer);
+    updatePosition(mousePosition, pointer, time);
+    updateRotation(mousePosition, pointer);
 }
 
 void redrawFrame(sf::RenderWindow &window, sf::ConvexShape &pointer)
