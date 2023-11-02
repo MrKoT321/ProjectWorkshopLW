@@ -4,10 +4,10 @@
 
 struct Cat
 {
-    const int WIDTH = 60;
-    const int HEIGHT = 55;
+    int direction = 1;
     sf::Texture texture;
     sf::Sprite img;
+    sf::Vector2u size;
     sf::Vector2f position = {300, 300};
 };
 
@@ -15,6 +15,7 @@ struct Pointer
 {
     sf::Texture texture;
     sf::Sprite img;
+    sf::Vector2u size;
     sf::Vector2f position = {600, 400};
 };
 
@@ -47,23 +48,36 @@ void init(Cat &cat, Pointer &pointer)
 {
     initCatTexture(cat.texture);
     cat.img.setTexture(cat.texture);
+    cat.size = cat.texture.getSize();
     cat.img.setPosition(cat.position);
+
     initPointTexture(pointer.texture);
     pointer.img.setTexture(pointer.texture);
-    pointer.img.setPosition(pointer.position);
+    pointer.size = pointer.texture.getSize();
+    pointer.img.setPosition({pointer.position.x + pointer.size.x / 2,
+                             pointer.position.y + pointer.size.y / 2});
 }
-
-// void onMouseClick(sf::Event::MouseButtonReleased &event, sf::Vector2f &mousePosition)
-// {
-//     mousePosition = {float(event.x), float(event.y)};
-// }
 
 void updatePointerPosition(sf::Vector2f mousePosition, Pointer &pointer)
 {
-    mousePosition.x -= 16;
-    mousePosition.y -= 16;
+    mousePosition.x -= pointer.size.x / 2;
+    mousePosition.y -= pointer.size.y / 2;
     pointer.position = mousePosition;
     pointer.img.setPosition(mousePosition);
+}
+
+void updateCatPosition(sf::Vector2f catPosition, Cat &cat)
+{
+    if (cat.direction == -1)
+    {
+        catPosition.x += cat.size.x / 2;
+    }
+    else
+    {
+        catPosition.x -= cat.size.x / 2;
+    }
+    catPosition.y -= cat.size.y / 2;
+    cat.img.setPosition(catPosition);
 }
 
 void pollEvents(sf::RenderWindow &window, sf::Vector2f &mousePosition, Pointer &pointer)
@@ -91,65 +105,67 @@ void pollEvents(sf::RenderWindow &window, sf::Vector2f &mousePosition, Pointer &
 
 void updateRotation(Cat &cat, Pointer pointer)
 {
-    const sf::Vector2f catPosition = cat.img.getPosition();
-    const sf::Vector2f delta = {pointer.position.x - catPosition.x,
-                                pointer.position.y - catPosition.y};
-    const float angle = toDegrees(atan2(delta.y, delta.x));
-    if (angle < 90 && angle > -90)
+    sf::Vector2f delta;
+    if (cat.direction == -1)
     {
-        cat.img.setScale(1, 1);
+        delta = {pointer.position.x - cat.position.x - cat.size.x / 2,
+                 pointer.position.y - cat.position.y + cat.size.y / 2};
     }
     else
     {
-        cat.img.setScale(-1, 1);
+        delta = {pointer.position.x - cat.position.x + cat.size.x / 2,
+                 pointer.position.y - cat.position.y + cat.size.y / 2};
+    }
+    const float angle = toDegrees(atan2(delta.y, delta.x));
+    if (angle < 90 && angle > -90)
+    {
+        std::cout << cat.direction << std::endl;
+        if (cat.direction == -1)
+        {
+            cat.img.setScale(1, 1);
+            cat.position.x += cat.size.x;
+            cat.direction = 1;
+        }
+    }
+    else
+    {
+
+        if (cat.direction == 1)
+        {
+            cat.img.setScale(-1, 1);
+            cat.position.x -= cat.size.x;
+            cat.direction = -1;
+        }
     }
 }
 
-bool updatePosition(Cat &cat, Pointer &pointer, float time)
+void updatePosition(Cat &cat, Pointer &pointer, float time)
 {
-    const int speed_per_frame = 20;
-    sf::Vector2f motion = pointer.position - cat.img.getPosition();
-    const int motionAbs = sqrt(motion.x * motion.x + motion.y * motion.y);
-    if (motionAbs >= speed_per_frame)
+    const int speedPerFrame = 20;
+    sf::Vector2f motion = {pointer.position.x - cat.position.x,
+                           pointer.position.y - cat.position.y};
+    const int motionAbs = std::sqrt(motion.x * motion.x + motion.y * motion.y);
+    if (motionAbs >= speedPerFrame)
     {
         motion.x /= motionAbs;
         motion.y /= motionAbs;
-        const float speed = speed_per_frame * time;
-        const sf::Vector2f position = cat.img.getPosition() + motion * speed;
-        cat.img.setPosition(position);
-        return true;
+        const float speed = speedPerFrame * time;
+        cat.position += motion * speed;
+        updateCatPosition(cat.position, cat);
     }
-    cat.img.setPosition(pointer.position);
-    return false;
 }
-
-// void updateCenterPosition(Cat &cat)
-// {
-//     const sf::Vector2f currentPosition = cat.img.getPosition();
-//     const float angle = cat.img.getRotation() * M_PI / 180;
-//     cat.position.x = currentPosition.x + cat.WIDTH * std::cos(angle);
-//     cat.position.y = currentPosition.y + cat.HEIGHT * std::sin(angle);
-// }
 
 void update(Cat &cat, Pointer pointer, float time)
 {
-    // updateCenterPosition(cat);
-    if (updatePosition(cat, pointer, time))
-        updateRotation(cat, pointer);
+    updateRotation(cat, pointer);
+    updatePosition(cat, pointer, time);
 }
 
 void redrawFrame(sf::RenderWindow &window, Cat cat, Pointer pointer)
 {
     window.clear(sf::Color(0xFF, 0xFF, 0xFF));
-    window.draw(cat.img);
     window.draw(pointer.img);
-
-    // sf::RectangleShape shape;
-    // shape.setSize({3, 3});
-    // shape.setPosition(cat.position);
-    // shape.setFillColor(sf::Color(0x00, 0x00, 0xFF));
-    // window.draw(shape);
-
+    window.draw(cat.img);
     window.display();
 }
 
@@ -162,7 +178,7 @@ int main()
     settings.antialiasingLevel = 8;
     sf::RenderWindow window(
         sf::VideoMode({WINDOW_WIDTH, WINDOW_HEIGHT}),
-        "cat to mouse", sf::Style::Default, settings);
+        "cat and red pointer", sf::Style::Default, settings);
 
     sf::Clock clock;
     Cat cat;
